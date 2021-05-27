@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from PIL import Image
 import telebot
 import config
@@ -25,14 +26,13 @@ def clear_content(chat_id):
         for img in images[chat_id]:
             os.remove(img)
     except Exception as e:
-        time.sleep(3)
         clear_content(chat_id)
     images[chat_id] = []
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
     chatId = message.chat.id
-    bot.send_message(chatId, 'Hello there!\nСкиньте фотографию чтобы я мог ее обрезать!')
+    bot.send_message(chatId, 'Hello there! \n Скиньте фотографию чтобы я мог ее обрезать!')
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
@@ -46,6 +46,7 @@ def send_attention(message):
 
 @bot.message_handler(content_types=['photo'])
 def handle_docs_photo(message):
+    text = message.caption
     chatId = message.chat.id
     print(message.photo[:-2])
     images[str(message.chat.id)] = []
@@ -58,19 +59,24 @@ def handle_docs_photo(message):
         images[str(message.chat.id)].append(src)
     except Exception as e:
         bot.reply_to(message,e )
-        bot.send_message(chatId,'Я упал - поднимайте')
 
-    try:
-        print('img: ', images)
+    try:    
+        print('img: ', images, text)
         reply_img = ''    
         reply_img = crop_img(images[str(message.chat.id)][0])
         images[str(message.chat.id)].append(reply_img)
-        bot.send_photo(message.chat.id, open(reply_img, 'rb'))
-        bot.send_photo(config.resend_id, open(reply_img, 'rb'))
-        clear_content(str(message.chat.id))
+        if text:    
+            bot.send_photo(message.chat.id, open(reply_img, 'rb'),text)
+            print("photo is edit")
+            print(text)
+            bot.send_photo(config.resend_id, open(reply_img, 'rb'),text)
+            print("send group")
+            clear_content(str(message.chat.id))
+        else:
+            print("text is not here")
+        
     except Exception as e:
         bot.reply_to(message,e)
-        bot.send_message(chatId,'Я упал - поднимайте')
 
-
+        
 bot.polling()
